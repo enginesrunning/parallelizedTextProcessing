@@ -1,0 +1,59 @@
+1. File Reading (Process 0 only)
+The root process (rank == 0) opens and reads the entire input file into memory.
+
+It gets the file size, reads the file content into a buffer (file_content).
+
+2. Broadcasting File Size
+The root broadcasts the file size to all other MPI processes with MPI_Bcast.
+
+Every process now knows how big the file is.
+
+3. Chunk Distribution (Scatterv)
+The file is split into roughly equal chunks — sendcounts[] holds the size of each chunk for each process, displs[] the offset.
+
+MPI_Scatterv sends each process its assigned chunk of text from the root's buffer.
+
+Each process receives only its chunk, not the entire file.
+
+4. Handling Word Boundaries Between Chunks
+Since chunks can split words across boundaries, the code has a mechanism to communicate whether a chunk ends inside a word or not.
+
+Each process:
+
+Receives from the previous rank whether the previous chunk ended inside a word (prev_ends_in_word).
+
+Uses this to decide if the start of its chunk continues a word (so it won’t count that partial word as a new word).
+
+After processing, it determines if its chunk ends inside a word (current_ends_in_word).
+
+Sends this flag to the next process, so the chain continues.
+
+This handshake ensures no double counting of words split between chunks.
+
+5. Local Chunk Processing
+Each process independently processes its chunk:
+
+Counts lines (\n characters),
+
+Counts words (based on transitions from non-alphanumeric to alphanumeric, 
+adjusted by prev_ends_in_word),
+
+Counts characters,
+
+Counts vowels.
+
+6. Reduction to Root
+After all processes finish their local counts, MPI_Reduce collects 
+and sums the results on the root process.
+
+The root process then prints the total counts.
+
+Summary
+
+Root reads file	Reads whole file into memory
+Broadcast file size	All processes know file size
+Scatter chunks	Each process gets a chunk of the file
+Communicate boundaries	Each process gets flag from previous, sends to next
+Process chunks locally	Counts lines, words, vowels, chars for chunk
+Reduce results	Root sums all partial results
+Output results	Root prints the final statistics
