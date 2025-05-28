@@ -56,9 +56,17 @@ Total characters: 1354782
 Total vowels: 178260
 Threads used: 12
 
-=== FINAL RESULTS (1GB)
+=== FINAL RESULTS ===
 Total lines: 231116
 Total words: 2311156
 Total characters: 11324637
 Total vowels: 3004495
 Threads used: 12
+Execution time: 280 ms
+
+Total lines: 17827 (~1 MB)
+Total words: 499128
+Total characters: 1354782
+Total vowels: 178260
+Threads used: 12
+Execution time: 66 ms
