@@ -1,3 +1,5 @@
+VAR 1 - MPI
+
 --TEST RESULTS--
 
 for:
@@ -43,3 +45,20 @@ Total characters: 11324637
 Total vowels: 3004495
 Processing time: 0.1240 seconds
 Processes used: 8
+
+
+VAR 2 - STL
+
+=== FINAL RESULTS === (~1MB)
+Total lines: 17827
+Total words: 499128
+Total characters: 1354782
+Total vowels: 178260
+Threads used: 12
+
+=== FINAL RESULTS (1GB)
+Total lines: 231116
+Total words: 2311156
+Total characters: 11324637
+Total vowels: 3004495
+Threads used: 12
