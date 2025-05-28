@@ -1,0 +1,126 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <vector>
+#include <thread>
+#include <cctype>
+#include <chrono>
+
+struct TextStats {
+    int line_count;
+    int word_count;
+    int char_count;
+    int vowel_count;
+
+    TextStats() : line_count(0), word_count(0), char_count(0), vowel_count(0) {}
+
+    void add(const TextStats& other) {
+        line_count += other.line_count;
+        word_count += other.word_count;
+        char_count += other.char_count;
+        vowel_count += other.vowel_count;
+    }
+};
+
+bool is_vowel(char c) {
+    if (c >= 'A' && c <= 'Z') c = c - 'A' + 'a'; // to lowercase
+    return c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u';
+}
+
+TextStats process_chunk(const std::string& chunk) {
+    TextStats stats;
+    bool in_word = false;
+
+    for (size_t i = 0; i < chunk.size(); ++i) {
+        char c = chunk[i];
+        stats.char_count++;
+
+        if (is_vowel(c)) {
+            stats.vowel_count++;
+        }
+        if (c == '\n') {
+            stats.line_count++;
+        }
+
+       
+        bool is_alnum = (c >= '0' && c <= '9') ||
+            (c >= 'A' && c <= 'Z') ||
+            (c >= 'a' && c <= 'z');
+
+        if (is_alnum) {
+            if (!in_word) {
+                stats.word_count++;
+                in_word = true;
+            }
+        }
+        else {
+            in_word = false;
+        }
+    }
+
+    return stats;
+}
+
+int main() {
+    using namespace std::chrono;
+
+    auto start_time = high_resolution_clock::now();  // start timer
+
+    std::ifstream file("bigfile.txt", std::ios::binary);
+    if (!file) {
+        std::cout << "Failed to open file." << std::endl;
+        return 1;
+    }
+
+    std::string content;
+    file.seekg(0, std::ios::end);
+    size_t file_size = (size_t)file.tellg();
+    file.seekg(0, std::ios::beg);
+
+    content.resize(file_size);
+    file.read(&content[0], file_size);
+    file.close();
+
+    unsigned int num_threads = std::thread::hardware_concurrency();
+    if (num_threads == 0) num_threads = 2;
+
+    size_t chunk_size = file_size / num_threads;
+    std::vector<std::string> chunks(num_threads);
+
+    for (unsigned int i = 0; i < num_threads; ++i) {
+        size_t start = i * chunk_size;
+        size_t end = (i == num_threads - 1) ? file_size : (i + 1) * chunk_size;
+        chunks[i] = content.substr(start, end - start);
+    }
+
+    std::vector<TextStats> partial_stats(num_threads);
+    std::vector<std::thread> threads;
+    for (unsigned int i = 0; i < num_threads; ++i) {
+        threads.push_back(std::thread([&chunks, &partial_stats, i]() {
+            partial_stats[i] = process_chunk(chunks[i]);
+            }));
+    }
+
+    for (unsigned int i = 0; i < num_threads; ++i) {
+        threads[i].join();
+    }
+
+    // Combine results
+    TextStats final_stats;
+    for (unsigned int i = 0; i < num_threads; ++i) {
+        final_stats.add(partial_stats[i]);
+    }
+
+    auto end_time = high_resolution_clock::now();  // end timer
+    auto duration = duration_cast<milliseconds>(end_time - start_time);
+
+    std::cout << "\n=== FINAL RESULTS ===\n";
+    std::cout << "Total lines: " << final_stats.line_count << "\n";
+    std::cout << "Total words: " << final_stats.word_count << "\n";
+    std::cout << "Total characters: " << final_stats.char_count << "\n";
+    std::cout << "Total vowels: " << final_stats.vowel_count << "\n";
+    std::cout << "Threads used: " << num_threads << "\n";
+    std::cout << "Execution time: " << duration.count() << " ms\n";
+
+    return 0;
+}
