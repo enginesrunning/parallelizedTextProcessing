@@ -57,3 +57,45 @@ Communicate boundaries	Each process gets flag from previous, sends to next
 Process chunks locally	Counts lines, words, vowels, chars for chunk
 Reduce results	Root sums all partial results
 Output results	Root prints the final statistics
+
+
+================================================
+
+
+
+
+
+
+
+
+
+
+
+Description
+This C++ program reads a text file and calculates text statistics in parallel using multiple CPU threads. It counts the total number of lines, words, characters, and vowels in the file.
+
+Components
+TextStats struct
+Holds counters for line_count, word_count, char_count, and vowel_count.
+Includes an add() method to accumulate results from different threads.
+
+is_vowel(char c)
+Helper function that returns true if the character is a vowel (a, e, i, o, u, case-insensitive).
+
+process_chunk(const std::string& chunk)
+Processes a substring (chunk) of the file, counting lines, words, characters, and vowels within that chunk. Detects word boundaries by checking for alphanumeric characters.
+
+main()
+
+Opens giantfile.txt (or others) in binary mode and reads its entire contents into a string.
+
+Determines the number of hardware threads available and divides the file content evenly into that many chunks.
+
+Creates a thread for each chunk to process it concurrently using process_chunk().
+
+Waits for all threads to finish, then aggregates all partial results into final_stats.
+
+Prints the total lines, words, characters, vowels counted, and the number of threads used.
+
+Parallelization
+Uses the C++ Standard Library’s std::thread to launch multiple threads that process distinct chunks of the input file concurrently, speeding up the text analysis on multi-core systems.
